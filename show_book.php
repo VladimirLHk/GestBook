@@ -18,7 +18,7 @@ if (file_exists($dataFile)) {
 
     foreach ($data as $str) {
         $content = explode($delimer, $str, 2); //если в строке (вдруг!) оказалась больше одного разделителя
-        if (!$content) continue; //если в строке (вдруг!) не оказалось разделителей
+        if (count($content)<2) continue; //если в строке (вдруг!) не оказалось разделителей
 
         $content[0] = htmlspecialchars(trim($content[0])); //если в тексте заголовка были (оказались) лишние пробелы или теги
         $content[1] = str_replace($newstr, '<br>', htmlspecialchars(trim($content[1]))); //возвращаем на место переносы строк, которые были в тексте сообщения
