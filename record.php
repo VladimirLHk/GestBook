@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: VLKhomutov
- * Date: 17.01.2019
- * Time: 22:02
- */
 $header="
 <html>
 <head>
@@ -14,15 +8,13 @@ $header="
 <body>
 ";
 
-if (empty($GLOBALS['delimer'])) $GLOBALS['delimer']="\t";
-$delimer = $GLOBALS['delimer']; //установка разделителя между "Заголовок" и "Сообщение"
-if (empty($GLOBALS['newstr'])) $GLOBALS['newstr']="##newLine##";
-$newstr = $GLOBALS['newstr']; //установка заменителя перевода строки в "Сообщение"
-if (empty($GLOBALS['dataFile'])) $GLOBALS['dataFile']="data.txt";
-$dataFile = $GLOBALS['dataFile']; //установка имени файла с записями гостевой книги
-
-
+$delimer = "\t"; //установка разделителя между "Заголовок" и "Сообщение"
+$newstr = "##newLine##"; //установка заменителя перевода строки в "Сообщение"
+$dataFile = "data.txt"; //установка имени файла с записями гостевой книги
 $emptyFieldsMsg="Есть незаполненные поля!";
+
+session_start();
+$_SESSION['saveOk']=false;
 $a = trim($_POST['TEXT']);
 $b = str_replace("\r\n", $newstr, trim($_POST['TEXTAREA']));
 if (empty($a) or empty($b)) {
@@ -32,17 +24,21 @@ if (empty($a) or empty($b)) {
     exit;
 }
 
-$str = $a.$delimer.$b."\n";
+$str = date("d.m.Y H:i:s").$delimer.$a.$delimer.$b."\n";
 $f = fopen($dataFile,"at") or die("Что-то пошло не так!!!");
 flock($f, LOCK_EX);
 if (fwrite ($f, $str)) {
-    flock($f, LOCK_UN);
+    $startFlush=time();
+    while(!fflush($f)) {
+        if(time()-$startFlush>10) {
+            //тут надо сообщение, что все плохо
+            exit ('Отзыв не сохрангился! Повторите, пожалуйста, ввод');
+        }
+    };
+    flock($f, LOCK_UN); //До вресии 5.3.2. можно было не делать, т.к. сразу после этого идет закрытие файла.
     fclose($f);
+    $_SESSION['saveOk']=true;
     header("Location: ".$_SERVER['HTTP_REFERER']);
-    /*
-    А вот другой способ:
-    echo "<HTML><HEAD><META HTTP-EQUIV = 'Refresh' CONTENT='3;URL=index.html'></HEAD></HTML>";
-    */
 } else {
     echo $header;
     exit ("Ошибка при работе с data.txt");
